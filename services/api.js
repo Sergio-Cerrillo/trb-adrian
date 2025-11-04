@@ -1,11 +1,71 @@
 // NOTA: Evita exponer claves en el cliente. Idealmente mueve esta llamada a un backend.
-// Permitimos leer desde una variable de entorno de Expo si existe y, si no, caemos al valor actual.
-// En Expo, las variables públicas suelen empezar por EXPO_PUBLIC_.
-const AI21_API_KEY = process.env.EXPO_PUBLIC_AI21_API_KEY || '844c3cb5-c162-44e0-8f06-d1102f418e10';
+// En Expo, las variables públicas suelen empezar por EXPO_PUBLIC_. Usa esto solo para desarrollo.
+// --- Configuración general ---
+const PROVIDER = (process.env.EXPO_PUBLIC_AI_PROVIDER || 'gemini').toLowerCase(); // 'gemini' | 'ai21'
+
+// --- AI21 config ---
+const AI21_API_KEY = process.env.EXPO_PUBLIC_AI21_API_KEY || '';
 const AI21_CHAT_API_URL = process.env.EXPO_PUBLIC_AI21_CHAT_API_URL || 'https://api.ai21.com/studio/v1/chat/completions'; // Endpoint para Jamba Chat (requiere acceso habilitado)
 const AI21_MODEL = process.env.EXPO_PUBLIC_AI21_MODEL || 'jamba-mini';
 
-export const askGPTNeo = async (userInput) => {
+// --- Gemini config (free tier) ---
+const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || '';
+const GEMINI_MODEL = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-1.5-flash';
+
+// --- Implementaciones de proveedores ---
+async function askGemini(userInput) {
+  console.log("[api.js] Gemini: Entrando con userInput:", userInput);
+
+  if (!GEMINI_API_KEY) {
+    const errorMessage = 'Configura EXPO_PUBLIC_GEMINI_API_KEY para usar Google Gemini (free tier).';
+    console.error(errorMessage);
+    return errorMessage;
+  }
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
+    const payload = {
+      contents: [
+        {
+          role: 'user',
+          parts: [{ text: userInput }],
+        },
+      ],
+    };
+
+    console.log("[api.js] Gemini: POST", url);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    console.log("[api.js] Gemini: Status:", response.status);
+    const text = await response.text();
+    if (!response.ok) {
+      let details = text;
+      try {
+        const j = JSON.parse(text);
+        details = j.error?.message || JSON.stringify(j);
+      } catch {}
+      if (response.status === 401 || response.status === 403) {
+        return `No autorizado/Prohibido en Gemini (${response.status}). Revisa tu EXPO_PUBLIC_GEMINI_API_KEY.`;
+      }
+      throw new Error(`Error Gemini ${response.status}: ${details}`);
+    }
+
+    const data = JSON.parse(text);
+    console.log("[api.js] Gemini: Data:", data);
+    const generatedText = data?.candidates?.[0]?.content?.parts?.map(p => p.text).join('')?.trim();
+    if (generatedText) return generatedText;
+    throw new Error('La respuesta de Gemini no tiene el formato esperado.');
+  } catch (error) {
+    console.error('[api.js] Gemini: Error en catch:', error);
+    return `Hubo un error conectando con Gemini: ${error.message || String(error)}`;
+  }
+}
+
+async function askAi21(userInput) {
   console.log("[api.js] AI21 Jamba Chat: Entrando con userInput:", userInput);
 
   if (!AI21_API_KEY || AI21_API_KEY === 'TU_AI21_API_KEY') {
@@ -69,7 +129,7 @@ export const askGPTNeo = async (userInput) => {
     }
 
     const data = await response.json();
-    console.log("[api.js] AI21 Jamba Chat: res.json() procesado. Data:", data);
+  console.log("[api.js] AI21 Jamba Chat: res.json() procesado. Data:", data);
 
     // Respuesta
     if (data?.choices && data.choices.length > 0 && data.choices[0]?.message?.content) {
@@ -85,5 +145,22 @@ export const askGPTNeo = async (userInput) => {
   } catch (error) {
     console.error('[api.js] AI21 Jamba Chat: Error en el bloque catch:', error);
     return `Hubo un error conectando con AI21 Jamba Chat: ${error.message || String(error)}`;
+  }
+}
+
+// --- API pública usada por la app ---
+export const askGPTNeo = async (userInput) => {
+  try {
+    if (PROVIDER === 'gemini') {
+      return await askGemini(userInput);
+    }
+    if (PROVIDER === 'ai21') {
+      return await askAi21(userInput);
+    }
+    console.warn(`[api.js] Proveedor desconocido: ${PROVIDER}. Usando Gemini por defecto.`);
+    return await askGemini(userInput);
+  } catch (e) {
+    console.error('[api.js] askGPTNeo: Error general:', e);
+    return `Error inesperado: ${e.message || String(e)}`;
   }
 };
