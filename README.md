@@ -1,6 +1,6 @@
 # TRB app (Expo)
 
-Este proyecto usa Expo y ahora incluye un servicio de chat IA con proveedor seleccionable por variables de entorno. Por defecto usa Google Gemini (free tier), y opcionalmente AI21.
+Este proyecto usa Expo y un servicio de chat IA basado únicamente en Google Gemini (free tier).
 
 ## Get started
 
@@ -10,28 +10,21 @@ Este proyecto usa Expo y ahora incluye un servicio de chat IA con proveedor sele
    npm install
    ```
 
-2. Variables de entorno (IA)
+2. Configuración de la API Key (Gemini)
 
-   Crea variables de entorno antes de arrancar. Para desarrollo puedes exportarlas temporalmente en la misma línea del comando.
+   Puedes configurar la clave de dos formas:
 
-   Opción recomendada (gratis): Gemini
+   a) Pegándola en el código (rápido para desarrollo):
+
+   - Abre `services/api.js` y reemplaza el valor de `GEMINI_API_KEY` en la línea indicada (`PON_AQUI_TU_API_KEY`).
+
+   b) Usando variable de entorno (recomendado para no versionar claves):
 
    ```bash
-   # Proveedor por defecto
-   export EXPO_PUBLIC_AI_PROVIDER=gemini
    # Clave de Gemini (consigue una en https://aistudio.google.com/app/apikey)
    export EXPO_PUBLIC_GEMINI_API_KEY=TU_CLAVE_GEMINI
    # (Opcional) Modelo
    export EXPO_PUBLIC_GEMINI_MODEL=gemini-1.5-flash
-   ```
-
-   Opción alternativa: AI21 (requiere plan/feature de Chat Completions)
-
-   ```bash
-   export EXPO_PUBLIC_AI_PROVIDER=ai21
-   export EXPO_PUBLIC_AI21_API_KEY=TU_CLAVE_AI21
-   export EXPO_PUBLIC_AI21_MODEL=jamba-mini
-   export EXPO_PUBLIC_AI21_CHAT_API_URL=https://api.ai21.com/studio/v1/chat/completions
    ```
 
 3. Start the app
