@@ -2,6 +2,7 @@
 // Para desarrollo puedes pegar tu API key aquí o usar la variable de entorno EXPO_PUBLIC_GEMINI_API_KEY.
 
 // --- Gemini config (free tier) ---
+// Puedes pegar tu API key aquí como valor por defecto o usar la variable de entorno.
 const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || 'PON_AQUI_TU_API_KEY';
 const GEMINI_MODEL = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-1.5-flash';
 
@@ -40,7 +41,7 @@ async function askGemini(userInput) {
       try {
         const j = JSON.parse(text);
         details = j.error?.message || JSON.stringify(j);
-      } catch {}
+      } catch { }
       if (response.status === 401 || response.status === 403) {
         return `No autorizado/Prohibido en Gemini (${response.status}). Revisa tu EXPO_PUBLIC_GEMINI_API_KEY.`;
       }
