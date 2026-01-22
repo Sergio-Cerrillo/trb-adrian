@@ -1,8 +1,4 @@
 
-const GEMINI_API_KEY = process.env.EXPO_PUBLIC_GEMINI_API_KEY || 'AIzaSyBBuRk453DvxbOiR30eMlgw_hnhsTIYM4E';
-const GEMINI_MODEL = process.env.EXPO_PUBLIC_GEMINI_MODEL || 'gemini-2.5-flash';
-const GEMINI_API_VERSION = (process.env.EXPO_PUBLIC_GEMINI_API_VERSION || 'v1').trim();
-
 // --- Implementaciones de proveedores ---
 async function askGemini(userInput) {
   console.log("[api.js] Gemini: Entrando con userInput:", userInput);
